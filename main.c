@@ -79,6 +79,57 @@ void tree_init(sem_lock_t *lock, int vals[], BST_t *bst, int arrLen) {//takes in
     sem_post(&lock->criticalLock);
 }
 
+void tree_insert(sem_lock_t *lock, int value, BST_t *bst) {
+    // Acquire the tree lock to ensure exclusive access
+    sem_wait(&lock->treeLock);
+
+    // Create a new node for the value
+    node *newNode = makeNode(value);
+    if (newNode == NULL) {
+        perror("Failed to allocate memory for the new node");
+        sem_post(&lock->treeLock); // Release the lock
+        return;
+    }
+
+    // If the tree is empty, set the new node as the head
+    if (bst->head == NULL) {
+        bst->head = newNode;
+        printf("Inserted %d as the head of the tree\n", value);
+        sem_post(&lock->treeLock); // Release the lock
+        return;
+    }
+
+    // Traverse the tree to find the correct position for the new node
+    node *current = bst->head;
+    node *parent = NULL;
+
+    while (current != NULL) {
+        parent = current;
+        if (value < current->data) {
+            current = current->left;
+        } else if (value > current->data) {
+            current = current->right;
+        } else {
+            // Value already exists, do not insert duplicates
+            printf("Value %d already exists in the tree\n", value);
+            free(newNode); // Free allocated memory for the duplicate node
+            sem_post(&lock->treeLock); // Release the lock
+            return;
+        }
+    }
+
+    // Attach the new node to the appropriate parent
+    if (value < parent->data) {
+        parent->left = newNode;
+    } else {
+        parent->right = newNode;
+    }
+
+    printf("Inserted %d into the tree\n", value);
+
+    // Release the lock
+    sem_post(&lock->treeLock);
+}
 
 void printTree(node *head) {
     //TODO implement this method if time permits
@@ -90,6 +141,7 @@ int main() {
 // binary search tree init
 BST_t bst;
 bst.head = NULL;
+
 // list of numbers to insert into the tree
 int sortedValues[7] = {1,2,3,4,5,8,11};
 int arrLen = (sizeof(sortedValues) / sizeof(sortedValues[0]));
