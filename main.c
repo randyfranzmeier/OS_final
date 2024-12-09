@@ -131,8 +131,14 @@ void tree_insert(sem_lock_t *lock, int value, BST_t *bst) {
     sem_post(&lock->treeLock);
 }
 
-void printTree(node *head) {
-    //TODO implement this method if time permits
+void printTree(node* head) {
+    if (head == NULL){
+        return;
+    }
+        
+    printTree(head->left);
+    printf("%d ", head->data);
+    printTree(head->right);
 }
 
 
@@ -154,6 +160,6 @@ tree_init(&lock, sortedValues, &bst, arrLen);
 
 printf("Head: %d\n", bst.head->data);
 printf("left node:%d\nright node: %d\n", bst.head->left->data, bst.head->right->data);
-
+printTree(bst.head);
 return 0;
 }
