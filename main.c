@@ -140,6 +140,26 @@ void printTree(node* head) {
     printf("%d ", head->data);
     printTree(head->right);
 }
+int searchTree(node* head,int value){
+    while(head != NULL){
+        if (value>head->data){
+            head = head->right;
+        }
+        else if (value<head->data)
+        {
+            head = head-> left;
+        }
+        else
+        {
+            printf("/nFound: %d",value);
+
+            return 1;
+        }
+        
+    }
+    printf("Unable to locate: %d in tree",value);
+    return 0;
+}
 
 
 
@@ -161,5 +181,7 @@ tree_init(&lock, sortedValues, &bst, arrLen);
 printf("Head: %d\n", bst.head->data);
 printf("left node:%d\nright node: %d\n", bst.head->left->data, bst.head->right->data);
 printTree(bst.head);
+searchTree(bst.head,12);
+
 return 0;
 }
