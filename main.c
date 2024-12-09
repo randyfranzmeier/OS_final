@@ -132,16 +132,24 @@ void tree_insert(sem_lock_t *lock, int value, BST_t *bst) {
 }
 
 void printTree(node* head) {
+    //notedly the method I converted over from python 
+    //actually has more lines of code
+    //if the head is NULL, you've reached the end of the tree
     if (head == NULL){
         return;
     }
-        
+    //if not then go all the way left
     printTree(head->left);
+    //once you've gone all the way left print the node
     printf("%d ", head->data);
+    //then go alllll the way right
     printTree(head->right);
 }
 int searchTree(node* head,int value){
+    //loop down node path until you reach null
     while(head != NULL){
+        //move left or right depending 
+        //on value >< data
         if (value>head->data){
             head = head->right;
         }
@@ -149,6 +157,9 @@ int searchTree(node* head,int value){
         {
             head = head-> left;
         }
+        //if neither condition is met that means
+        //that the value of the current node is the
+        //value of what you are looking for
         else
         {
             printf("/nFound: %d",value);
@@ -157,6 +168,8 @@ int searchTree(node* head,int value){
         }
         
     }
+    //if you reached null then the value is not in
+    //tree
     printf("Unable to locate: %d in tree",value);
     return 0;
 }
