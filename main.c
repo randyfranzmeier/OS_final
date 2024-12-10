@@ -377,6 +377,16 @@ int searchTree(node *head, int value)
     return 0;
 }
 
+void testDeleteNodes(sem_lock_t *lock, BST_t *bst)
+{
+    deleteVal(lock, bst, 2);
+    printTreeInorder(bst->head, lock);
+    printf("\n");
+    deleteVal(lock, bst, 4);
+    printTreeInorder(bst->head, lock);
+    printf("\n");
+}
+
 int main()
 {
     // binary search tree init
@@ -389,16 +399,13 @@ int main()
     // lock
     sem_lock_t lock;
     sem_lock_init(&lock);
-
     // setting up tree
     tree_init(&lock, sortedValues, &bst, arrLen);
+    printf("Initialized tree in order: \n");
     printTreeInorder(bst.head, &lock);
-    deleteVal(&lock, &bst, 2);
-    printTreeInorder(bst.head, &lock);
-    printf("\n");
-    deleteVal(&lock, &bst, 4);
-    printTreeInorder(bst.head, &lock);
-    printf("\n");
+
+    testDeleteNodes(&lock, &bst);
+    
 
     return 0;
 }
