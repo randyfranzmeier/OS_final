@@ -154,14 +154,91 @@ void tree_insert(sem_lock_t *lock, int value, BST_t *bst)
     sem_post(&lock->treeLock);
 }
 
-void deleteVal(sem_lock_t *lock, BST_t  *bst, int value)
+node* getParent(node *head, int val)
+{
+    if (head != NULL)
+    {
+        if (head->data == val)
+        {
+            return NULL; // no parents
+        }
+    }
+
+    while (head != NULL)
+    {
+        if (head->left->data == val || head->right->data == val)
+        {
+            return head;
+        }
+        else if (head->data > val)
+        {
+            head = head->left;
+        }
+        else if (head->data < val)
+        {
+            head = head->right;
+        }
+    }
+    // if it reaches here there is no parent
+    return NULL;
+}
+
+// fancy function for getting the next highest number than the current one
+node* getSuccessor(node *head, int val)
+{
+    head = head->right;
+    while (head->left != NULL)
+    {
+        head = head->left;
+    }
+    return head;
+}
+
+// fancy function for finding the lowest number closest to the current one
+node* getPredecessor(node *head, int val)
+{
+    head = head->left;
+    while (head->right != NULL) 
+    {
+        head = head->right;
+    }
+    return head;
+}
+
+void deleteVal(sem_lock_t *lock, BST_t *bst, int value)
 {
     // acquire lock
     sem_wait(&lock->criticalLock);
     sem_wait(&lock->treeLock);
     node *current = bst->head;
-    if (current->data == value) {
-        printf("Unable to delete root node\n");
+    if (current->data == value)
+    {
+        // root node deletion
+        node *succOrPred = getSuccessor(bst->head, value);
+        if (succOrPred == NULL)
+        {
+            succOrPred = getPredecessor(bst->head, value);
+            if (succOrPred == NULL)
+            {
+                printf("deleting whole tree\n");
+                bst->head = NULL;
+                sem_post(&lock->criticalLock);
+                sem_post(&lock->treeLock);
+                return;
+            }
+        }
+        printf("deleting root node\n");
+        int temp = succOrPred->data;
+        node *parent = getParent(bst->head, temp);
+        if (parent->data > value)
+        {
+            parent->left = NULL;
+        }
+        else
+        {
+            parent->right = NULL;
+        }
+        current->data = temp;
         sem_post(&lock->criticalLock);
         sem_post(&lock->treeLock);
         return;
@@ -183,11 +260,61 @@ void deleteVal(sem_lock_t *lock, BST_t  *bst, int value)
         // value of what you are looking for
         else
         {
-            // first check to see if it's a leaf node
+            printf("\ndeleting %d\n", current->data);
+            // leaf node
             if (current->left == NULL && current->right == NULL)
             {
-                printf("deleting %d\n", current->data);
-                current = NULL;
+                node *parent = getParent(bst->head, value);
+                if (parent->data > value)
+                {
+                    parent->left = NULL;
+                }
+                else
+                {
+                    parent->right = NULL;
+                }
+            }
+            // single right child
+            else if (current->left == NULL)
+            {
+                node *parent = getParent(bst->head, value);
+                if (parent->data > value)
+                {
+                    parent->left = current->right;
+                }
+                else
+                {
+                    parent->right = current->right;
+                }
+            }
+            // single left child
+            else if (current->right == NULL)
+            {
+                node *parent = getParent(bst->head, value);
+                if (parent->data > value)
+                {
+                    parent->left = current->left;
+                }
+                else
+                {
+                    parent->right = current->left;
+                }
+            }
+            // 2 children
+            else
+            {
+                node *succ = getSuccessor(current, value);
+                int temp = succ->data;
+                node *parent = getParent(bst->head, temp);
+                if (parent->data > value)
+                {
+                    parent->left = NULL;
+                }
+                else
+                {
+                    parent->right = NULL;
+                }
+                current->data = temp;
             }
             sem_post(&lock->criticalLock);
             sem_post(&lock->treeLock);
@@ -239,7 +366,7 @@ int searchTree(node *head, int value)
         // value of what you are looking for
         else
         {
-            printf("\nFound: %d", value);
+            printf("\nFound: %d\n", value);
 
             return 1;
         }
@@ -265,17 +392,13 @@ int main()
 
     // setting up tree
     tree_init(&lock, sortedValues, &bst, arrLen);
-
-    printf("Head: %d\n", bst.head->data);
-    printf("left node:%d\nright node: %d\n", bst.head->left->data, bst.head->right->data);
-    // printTreeInorder(bst.head);
-    // searchTree(bst.head,12);
-    deleteVal(&lock, &bst, 3);
+    printTreeInorder(bst.head, &lock);
+    deleteVal(&lock, &bst, 2);
     printTreeInorder(bst.head, &lock);
     printf("\n");
- 
-
-   
+    deleteVal(&lock, &bst, 4);
+    printTreeInorder(bst.head, &lock);
+    printf("\n");
 
     return 0;
 }
