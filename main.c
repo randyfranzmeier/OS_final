@@ -154,7 +154,7 @@ void tree_insert(sem_lock_t *lock, int value, BST_t *bst)
     sem_post(&lock->treeLock);
 }
 
-node* getParent(node *head, int val)
+node *getParent(node *head, int val)
 {
     if (head != NULL)
     {
@@ -184,7 +184,7 @@ node* getParent(node *head, int val)
 }
 
 // fancy function for getting the next highest number than the current one
-node* getSuccessor(node *head, int val)
+node *getSuccessor(node *head, int val)
 {
     head = head->right;
     while (head->left != NULL)
@@ -195,10 +195,10 @@ node* getSuccessor(node *head, int val)
 }
 
 // fancy function for finding the lowest number closest to the current one
-node* getPredecessor(node *head, int val)
+node *getPredecessor(node *head, int val)
 {
     head = head->left;
-    while (head->right != NULL) 
+    while (head->right != NULL)
     {
         head = head->right;
     }
@@ -405,7 +405,6 @@ int main()
     printTreeInorder(bst.head, &lock);
 
     testDeleteNodes(&lock, &bst);
-    
 
     return 0;
 }
