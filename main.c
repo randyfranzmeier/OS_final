@@ -130,7 +130,38 @@ void tree_insert(sem_lock_t *lock, int value, BST_t *bst) {
     // Release the lock
     sem_post(&lock->treeLock);
 }
+void deleteVal(sem_lock_t *lock,node* head,int value){
+    //acquire lock
+    sem_wait(&lock->treeLock);
+    node* current = head;
+    while(head != NULL){
+        //move left or right depending 
+        //on value >< data
+        if (value>head->data){
+            head = head->right;
+        }
+        else if (value<head->data)
+        {
+            head = head-> left;
+        }
+        //if neither condition is met that means
+        //that the value of the current node is the
+        //value of what you are looking for
+        else
+        {   
+            
+            //needs delete logic somewhere around here
+            sem_post(&lock->treeLock);
+            return;
+        }
 
+        
+    }
+    printf("Unable to locate: %d in tree",value);
+    sem_post(&lock->treeLock);
+    return;
+    
+}
 void printTree(node* head) {
     //notedly the method I converted over from python 
     //actually has more lines of code
@@ -193,8 +224,10 @@ tree_init(&lock, sortedValues, &bst, arrLen);
 
 printf("Head: %d\n", bst.head->data);
 printf("left node:%d\nright node: %d\n", bst.head->left->data, bst.head->right->data);
+//printTree(bst.head);
+//searchTree(bst.head,12);
+deleteVal(&lock,bst.head,3);
 printTree(bst.head);
-searchTree(bst.head,12);
 
 return 0;
 }
