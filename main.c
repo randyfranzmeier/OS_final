@@ -153,39 +153,54 @@ void tree_insert(sem_lock_t *lock, int value, BST_t *bst)
     // Release the lock
     sem_post(&lock->treeLock);
 }
-void deleteVal(sem_lock_t *lock, node *head, int value)
+
+void deleteVal(sem_lock_t *lock, BST_t  *bst, int value)
 {
     // acquire lock
+    sem_wait(&lock->criticalLock);
     sem_wait(&lock->treeLock);
-    node *current = head;
-    while (head != NULL)
+    node *current = bst->head;
+    if (current->data == value) {
+        printf("Unable to delete root node\n");
+        sem_post(&lock->criticalLock);
+        sem_post(&lock->treeLock);
+        return;
+    }
+    while (current != NULL)
     {
         // move left or right depending
         // on value >< data
-        if (value > head->data)
+        if (value > current->data)
         {
-            head = head->right;
+            current = current->right;
         }
-        else if (value < head->data)
+        else if (value < current->data)
         {
-            head = head->left;
+            current = current->left;
         }
         // if neither condition is met that means
         // that the value of the current node is the
         // value of what you are looking for
         else
         {
-
-            // needs delete logic somewhere around here
+            // first check to see if it's a leaf node
+            if (current->left == NULL && current->right == NULL)
+            {
+                printf("deleting %d\n", current->data);
+                current = NULL;
+            }
+            sem_post(&lock->criticalLock);
             sem_post(&lock->treeLock);
             return;
         }
     }
-    printf("Unable to locate: %d in tree", value);
+    printf("Unable to locate: %d in tree\n", value);
+    sem_post(&lock->criticalLock);
     sem_post(&lock->treeLock);
     return;
 }
-void printTree(node *head)
+
+void printTreeInorder(node *head, sem_lock_t *lock)
 {
     // notedly the method I converted over from python
     // actually has more lines of code
@@ -195,12 +210,15 @@ void printTree(node *head)
         return;
     }
     // if not then go all the way left
-    printTree(head->left);
+    printTreeInorder(head->left, lock);
     // once you've gone all the way left print the node
+    sem_wait(&lock->criticalLock);
     printf("%d ", head->data);
+    sem_post(&lock->criticalLock);
     // then go alllll the way right
-    printTree(head->right);
+    printTreeInorder(head->right, lock);
 }
+
 int searchTree(node *head, int value)
 {
     // loop down node path until you reach null
@@ -221,14 +239,14 @@ int searchTree(node *head, int value)
         // value of what you are looking for
         else
         {
-            printf("/nFound: %d", value);
+            printf("\nFound: %d", value);
 
             return 1;
         }
     }
     // if you reached null then the value is not in
     // tree
-    printf("Unable to locate: %d in tree", value);
+    printf("\nUnable to locate: %d in tree\n", value);
     return 0;
 }
 
@@ -250,10 +268,14 @@ int main()
 
     printf("Head: %d\n", bst.head->data);
     printf("left node:%d\nright node: %d\n", bst.head->left->data, bst.head->right->data);
-    // printTree(bst.head);
+    // printTreeInorder(bst.head);
     // searchTree(bst.head,12);
-    deleteVal(&lock, bst.head, 3);
-    printTree(bst.head);
+    deleteVal(&lock, &bst, 3);
+    printTreeInorder(bst.head, &lock);
+    printf("\n");
+ 
+
+   
 
     return 0;
 }
