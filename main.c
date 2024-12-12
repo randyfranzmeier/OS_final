@@ -205,7 +205,7 @@ node *getPredecessor(node *head, int val)
     return head;
 }
 
-void deleteVal(sem_lock_t *lock, int value, BST_t *bst)
+void deleteVal(sem_lock_t *lock, BST_t *bst, int value)
 {
     // acquire lock
     sem_wait(&lock->criticalLock);
@@ -379,10 +379,10 @@ int searchTree(node *head, int value)
 
 void testDeleteNodes(sem_lock_t *lock, BST_t *bst)
 {
-    deleteVal(lock, bst, 2);
+    deleteVal(lock, 2, bst);
     printTreeInorder(bst->head, lock);
     printf("\n");
-    deleteVal(lock, bst, 4);
+    deleteVal(lock, 4, bst);
     printTreeInorder(bst->head, lock);
     printf("\n");
 }
