@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <semaphore.h>
-
+#include <pthread.h>
 // The tree is composed of nodes, which have a reference to the left, right, and some data
 // This was made possible with the help of https://www.geeksforgeeks.org/binary-tree-in-c/
 typedef struct node
@@ -386,6 +386,20 @@ void testDeleteNodes(sem_lock_t *lock, BST_t *bst)
     printTreeInorder(bst->head, lock);
     printf("\n");
 }
+typedef struct{
+    int thread_id;
+    BST_t bst;
+    sem_lock_t lock;
+    int value;
+    void(*func)(sem_lock_t *,int,BST_t *);
+}thread_data_t;
+void *thread_gen(void *arg) {
+	thread_data_t *data = (thread_data_t *)arg;
+	//printf("Hello from thread %d\n", data->value);
+    
+	data->func(&data->lock,data->value,&data->bst);  // Call the function passed
+	pthread_exit(NULL);
+}
 
 int main()
 {
@@ -405,6 +419,18 @@ int main()
     printTreeInorder(bst.head, &lock);
 
     testDeleteNodes(&lock, &bst);
+    thread_data_t td;
+    td.thread_id = 0;
+    td.lock = lock;
+    td.bst = bst;
+    td.value = 15;
+    td.func = tree_insert;
+    pthread_t t1;
+    pthread_create(&t1, NULL, thread_gen, &td);
+    //tree_insert(&lock,15,&bst);
+    pthread_join(t1,NULL);
+    printf("Initialized tree in order: \n");
+    printTreeInorder(bst.head, &lock);
 
     return 0;
 }
