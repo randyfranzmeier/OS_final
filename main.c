@@ -4,6 +4,7 @@
 #include <pthread.h>
 // The tree is composed of nodes, which have a reference to the left, right, and some data
 // This was made possible with the help of https://www.geeksforgeeks.org/binary-tree-in-c/
+#define MAX_THREADS 10
 typedef struct node
 {
     struct node *left;
@@ -379,10 +380,10 @@ int searchTree(node *head, int value)
 
 void testDeleteNodes(sem_lock_t *lock, BST_t *bst)
 {
-    deleteVal(lock, bst, 2);
+    deleteVal(lock, 2, bst);
     printTreeInorder(bst->head, lock);
     printf("\n");
-    deleteVal(lock, bst, 4);
+    deleteVal(lock, 4, bst);
     printTreeInorder(bst->head, lock);
     printf("\n");
 }
@@ -419,12 +420,29 @@ int main()
     printTreeInorder(bst.head, &lock);
 
     testDeleteNodes(&lock, &bst);
+    int num_threads;
+    int done = 0;
     thread_data_t td;
     td.thread_id = 0;
     td.lock = lock;
     td.bst = bst;
     td.value = 15;
     td.func = tree_insert;
+    while (done == 0){
+        printf("Enter a number of threads (10 or fewer): ");
+        if (scanf("%d", &num_threads)!=1){
+            printf("\nInvalid input. Enter a valid number.\n");
+            while (getchar()!= '\n');
+            continue;
+
+        }
+        if (num_threads <= MAX_THREADS && num_threads > 0) {
+			done = 1;
+		} else {
+			printf("\nEnter a number less than 10.\n");
+		}
+
+    }
     pthread_t t1;
     pthread_create(&t1, NULL, thread_gen, &td);
     //tree_insert(&lock,15,&bst);
