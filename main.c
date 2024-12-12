@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <semaphore.h>
 #include <pthread.h>
+#include <time.h>
 // The tree is composed of nodes, which have a reference to the left, right, and some data
 // This was made possible with the help of https://www.geeksforgeeks.org/binary-tree-in-c/
 #define MAX_THREADS 10
@@ -403,6 +404,7 @@ typedef struct{
     int value;
     void(*func)(sem_lock_t *,int,BST_t *);
 }thread_data_t;
+
 void *thread_gen(void *arg) {
 	thread_data_t *data = (thread_data_t *)arg;
 	//printf("Hello from thread %d\n", data->value);
@@ -410,6 +412,8 @@ void *thread_gen(void *arg) {
 	data->func(&data->lock,data->value,&data->bst);  // Call the function passed
 	pthread_exit(NULL);
 }
+
+
 
 int main()
 {
@@ -454,7 +458,7 @@ int main()
         td[i].thread_id;
         td[i].lock = lock;
         td[i].bst = bst;
-        td[i].value = i+100;
+        td[i].value =  rand() % 100;
         td[i].func = tree_insert;
         if (pthread_create(&threads[i], NULL, thread_gen, &td[i]) != 0) {
 			perror("pthread_create failed");
