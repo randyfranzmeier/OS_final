@@ -205,7 +205,7 @@ node *getPredecessor(node *head, int val)
     return head;
 }
 
-void deleteVal(sem_lock_t *lock, BST_t *bst, int value)
+void deleteVal(sem_lock_t *lock, int value, BST_t *bst)
 {
     // acquire lock
     sem_wait(&lock->criticalLock);
