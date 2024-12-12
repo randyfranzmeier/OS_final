@@ -390,11 +390,9 @@ int searchTree(node *head, int value)
 // A test function that deletes specific nodes (2 and 4) from the BST and prints the tree's state after each deletion.
 void testDeleteNodes(sem_lock_t *lock, BST_t *bst)
 {
-    deleteVal(lock, 2, bst);
+    deleteVal(lock, rand() % MAX_THREADS, bst);
     printTreeInorder(bst->head, lock);
     printf("\n");
-    deleteVal(lock, 4, bst);
-    printTreeInorder(bst->head, lock);
     printf("\n");
 }
 typedef struct{
@@ -430,9 +428,7 @@ int main()
     // setting up tree
     tree_init(&lock, sortedValues, &bst, arrLen);
     printf("Initialized tree in order: \n");
-    printTreeInorder(bst.head, &lock);
 
-    testDeleteNodes(&lock, &bst);
     int num_threads;
     int done = 0;
     thread_data_t td[MAX_THREADS];
@@ -464,6 +460,7 @@ int main()
 			perror("pthread_create failed");
 			exit(EXIT_FAILURE);
 		}
+        testDeleteNodes(&lock, &bst);
     }
     
     //tree_insert(&lock,15,&bst);
