@@ -25,6 +25,7 @@ typedef struct BST
     struct node *head;
 } BST_t;
 
+// Creates a new binary tree node with the given value, initializes its children to NULL, and returns the created node.
 node *makeNode(int value)
 {
     // allocate memory for the node
@@ -35,12 +36,14 @@ node *makeNode(int value)
     return nodeToMake;
 }
 
+// Initializes the semaphore locks used for synchronizing access to the tree's critical section and overall structure.
 void sem_lock_init(sem_lock_t *lock)
 {
     sem_init(&lock->criticalLock, 0, 1);
     sem_init(&lock->treeLock, 0, 1);
 }
 
+// A helper function to recursively build a binary search tree from a sorted array, inserting nodes into left and right subtrees.
 int treeInitHelper(int vals[], node *cur, int left, int right, int arrLen)
 {
     // base case
@@ -91,6 +94,7 @@ void tree_init(sem_lock_t *lock, int vals[], BST_t *bst, int arrLen)
     sem_post(&lock->criticalLock);
 }
 
+// Inserts a value into the BST in a thread-safe manner. It ensures no duplicate values are added and locks the tree during the operation.
 void tree_insert(sem_lock_t *lock, int value, BST_t *bst)
 {
     // Acquire the tree lock to ensure exclusive access
@@ -155,6 +159,7 @@ void tree_insert(sem_lock_t *lock, int value, BST_t *bst)
     sem_post(&lock->treeLock);
 }
 
+// Finds and returns the parent node of the given value in the tree. Returns NULL if the node has no parent or does not exist.
 node *getParent(node *head, int val)
 {
     if (head != NULL)
@@ -184,7 +189,7 @@ node *getParent(node *head, int val)
     return NULL;
 }
 
-// fancy function for getting the next highest number than the current one
+// Finds and returns the in-order successor of a given node, i.e., the smallest node greater than the current node.
 node *getSuccessor(node *head, int val)
 {
     head = head->right;
@@ -195,7 +200,7 @@ node *getSuccessor(node *head, int val)
     return head;
 }
 
-// fancy function for finding the lowest number closest to the current one
+// Finds and returns the in-order predecessor of a given node, i.e., the largest node smaller than the current node.
 node *getPredecessor(node *head, int val)
 {
     head = head->left;
@@ -206,6 +211,7 @@ node *getPredecessor(node *head, int val)
     return head;
 }
 
+// Deletes a node with the specified value from the BST in a thread-safe manner. Handles different cases of node deletion: leaf node, single child, or two children.
 void deleteVal(sem_lock_t *lock, int value,BST_t *bst)
 {
     // acquire lock
@@ -328,6 +334,7 @@ void deleteVal(sem_lock_t *lock, int value,BST_t *bst)
     return;
 }
 
+// Performs an in-order traversal of the BST and prints each node's value. Locks are used to ensure thread-safe printing.
 void printTreeInorder(node *head, sem_lock_t *lock)
 {
     // notedly the method I converted over from python
@@ -347,6 +354,7 @@ void printTreeInorder(node *head, sem_lock_t *lock)
     printTreeInorder(head->right, lock);
 }
 
+// Searches for a specified value in the BST and returns 1 if found, 0 otherwise. Prints the result of the search operation.
 int searchTree(node *head, int value)
 {
     // loop down node path until you reach null
@@ -378,6 +386,7 @@ int searchTree(node *head, int value)
     return 0;
 }
 
+// A test function that deletes specific nodes (2 and 4) from the BST and prints the tree's state after each deletion.
 void testDeleteNodes(sem_lock_t *lock, BST_t *bst)
 {
     deleteVal(lock, 2, bst);
