@@ -213,7 +213,7 @@ node *getPredecessor(node *head, int val)
 }
 
 // Deletes a node with the specified value from the BST in a thread-safe manner. Handles different cases of node deletion: leaf node, single child, or two children.
-void deleteVal(sem_lock_t *lock, int value,BST_t *bst)
+void deleteVal(sem_lock_t *lock, int value, BST_t *bst)
 {
     // acquire lock
     sem_wait(&lock->criticalLock);
@@ -395,22 +395,23 @@ void testDeleteNodes(sem_lock_t *lock, BST_t *bst)
     printTreeInorder(bst->head, lock);
     printf("\n");
 }
-typedef struct{
+
+typedef struct
+{
     int thread_id;
     BST_t bst;
     sem_lock_t lock;
     int value;
-    void(*func)(sem_lock_t *,int,BST_t *);
-}thread_data_t;
+    void (*func)(sem_lock_t *, int, BST_t *);
+} thread_data_t;
 
-void *thread_gen(void *arg) {
-	thread_data_t *data = (thread_data_t *)arg;
+void *thread_gen(void *arg)
+{
+    thread_data_t *data = (thread_data_t *)arg;
     printf("-----------Thread %d insert-node-----------\n", data->thread_id);
-	data->func(&data->lock,data->value,&data->bst);  // Call the function passed
-	pthread_exit(NULL);
+    data->func(&data->lock, data->value, &data->bst); // Call the function passed
+    pthread_exit(NULL);
 }
-
-
 
 int main()
 {
@@ -431,40 +432,46 @@ int main()
     int num_threads;
     int done = 0;
     thread_data_t td[MAX_THREADS];
-    
-    
-    while (done == 0){
+
+    while (done == 0)
+    {
         printf("Enter a number of threads (10 or fewer): ");
-        if (scanf("%d", &num_threads)!=1){
+        if (scanf("%d", &num_threads) != 1)
+        {
             printf("\nInvalid input. Enter a valid number.\n");
-            while (getchar()!= '\n');
+            while (getchar() != '\n')
+                ;
             continue;
-
         }
-        if (num_threads <= MAX_THREADS && num_threads > 0) {
-			done = 1;
-		} else {
-			printf("\nEnter a number less than 10.\n");
-		}
-
+        if (num_threads <= MAX_THREADS && num_threads > 0)
+        {
+            done = 1;
+        }
+        else
+        {
+            printf("\nEnter a number less than 10.\n");
+        }
     }
     pthread_t threads[num_threads];
-    for (int i = 0; i<num_threads;i++){
+    for (int i = 0; i < num_threads; i++)
+    {
         td[i].thread_id;
         td[i].lock = lock;
         td[i].bst = bst;
-        td[i].value =  rand() % 20;
+        td[i].value = rand() % 20;
         td[i].func = tree_insert;
-        if (pthread_create(&threads[i], NULL, thread_gen, &td[i]) != 0) {
-			perror("pthread_create failed");
-			exit(EXIT_FAILURE);
-		}
+        if (pthread_create(&threads[i], NULL, thread_gen, &td[i]) != 0)
+        {
+            perror("pthread_create failed");
+            exit(EXIT_FAILURE);
+        }
         // Deleting node from separate thread
         testDeleteNodes(&lock, &bst);
     }
-    
+
     // wait for threads to finish
-    for (int i = 0; i < num_threads; i++) {
+    for (int i = 0; i < num_threads; i++)
+    {
         pthread_join(threads[i], NULL);
     }
     printf("Initialized tree in order: \n");
