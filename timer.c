@@ -660,6 +660,14 @@ void handleSingleThread(int num_loops, BST_t bst)
     printf("\n");
 }
 
+void writeToCsv(double multiThreadElapsedTime, double singleThreadElapsedTime, int num_threads)
+{
+    FILE *fptr;
+    fptr = fopen("time_data.csv", "a");
+    fprintf(fptr, "%f,%f,%d\n", multiThreadElapsedTime, singleThreadElapsedTime, num_threads);
+    fclose(fptr);
+}
+
 int main()
 {
     printf("Welcome to timer.c where a threaded and non-threaded BST insert, delete, and traverse the tree.\nWhich one will be faster???\n");
@@ -712,10 +720,12 @@ int main()
     gettimeofday(&startTimeNoThreads,NULL);
     handleSingleThread(num_threads, singleThreadBst);
     gettimeofday(&endTimeNoThreads, NULL);
-    double multiThreadedElapsedTime = (endTimeThreads.tv_sec  - startTimeThreads.tv_sec) + ((endTimeThreads.tv_usec - startTimeThreads.tv_usec)/1000000.0);
+    double multiThreadElapsedTime = (endTimeThreads.tv_sec  - startTimeThreads.tv_sec) + ((endTimeThreads.tv_usec - startTimeThreads.tv_usec)/1000000.0);
     double singleThreadElapsedTime = (endTimeNoThreads.tv_sec  - startTimeNoThreads.tv_sec) + ((endTimeNoThreads.tv_usec - startTimeNoThreads.tv_usec)/1000000.0);
     printf("          *------*\n          |Stats:|\n          *------*\n");
-    printf("Multi threaded time in seconds: %f\nSingle threaded time in seconds %f\n", multiThreadedElapsedTime, singleThreadElapsedTime);
+    printf("Multi threaded time in seconds: %f\nSingle threaded time in seconds %f\n", multiThreadElapsedTime, singleThreadElapsedTime);
+    // Write data to csv
+    writeToCsv(multiThreadElapsedTime, singleThreadElapsedTime, num_threads);
     
     return 0;
 }
