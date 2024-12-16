@@ -3,10 +3,11 @@
 #include <semaphore.h>
 #include <pthread.h>
 #include <sys/time.h>
+#include <unistd.h>
 // The tree is composed of nodes, which have a reference to the left, right, and some data
 // This was made possible with the help of https://www.geeksforgeeks.org/binary-tree-in-c/
-#define MAX_THREADS 25
-#define MAX_VALUE 20
+#define MAX_THREADS 100
+#define MAX_VALUE 30
 typedef struct node
 {
     struct node *left;
@@ -75,7 +76,7 @@ int treeInitHelper(int vals[], node *cur, int left, int right, int arrLen)
 }
 
 // This function takes in a sorted list to create a binary search tree by recursively inserting nodes
-void tree_init(sem_lock_t *lock, int vals[], BST_t *bst, int arrLen)
+void tree_init_sem(sem_lock_t *lock, int vals[], BST_t *bst, int arrLen)
 { // takes in a list, lock, and bst.
     // Binary semaphores for now
     sem_wait(&lock->criticalLock);
@@ -94,6 +95,22 @@ void tree_init(sem_lock_t *lock, int vals[], BST_t *bst, int arrLen)
 
     sem_post(&lock->treeLock);
     sem_post(&lock->criticalLock);
+}
+
+void tree_init(int vals[], BST_t *bst, int arrLen)
+{ // takes in a list and bst.
+
+    // calculate middle to find head node, and keep finding middle recursively
+    int left = 0;
+    int right = arrLen;
+    int middle = (right + left) / 2;
+    bst->head = makeNode(vals[middle]);
+    // reference to head node
+    node *cur = bst->head;
+    // left sub tree
+    treeInitHelper(vals, cur, left, middle - 1, arrLen);
+    // right subtree
+    treeInitHelper(vals, cur, middle + 1, right, arrLen);
 }
 
 // Inserts a value into the BST in a thread-safe manner. It ensures no duplicate values are added and locks the tree during the operation.
@@ -220,17 +237,15 @@ void tree_insert(int value, BST_t *bst)
 // Finds and returns the parent node of the given value in the tree. Returns NULL if the node has no parent or does not exist.
 node *getParent(node *head, int val)
 {
-    if (head != NULL)
+    printf("Hello from Parent!");
+    if (head == NULL || head->data == val) 
     {
-        if (head->data == val)
-        {
-            return NULL; // no parents
-        }
+        return NULL;
     }
 
     while (head != NULL)
     {
-        if (head->left->data == val || head->right->data == val)
+        if (head->left && head->left->data == val || head->right && head->right->data == val)
         {
             return head;
         }
@@ -444,6 +459,7 @@ void deleteVal(int value, BST_t *bst)
             // leaf node
             if (current->left == NULL && current->right == NULL)
             {
+                printf("leaf\n");
                 node *parent = getParent(bst->head, value);
                 if (parent->data > value)
                 {
@@ -604,10 +620,10 @@ void handleThreads(int num_threads, sem_lock_t lock, BST_t bst)
     pthread_t threads[num_threads];
     for (int i = 0; i < num_threads; i++)
     {
-        td[i].thread_id;
+        td[i].thread_id = i;
         td[i].lock = lock;
         td[i].bst = bst;
-        td[i].value = rand() % MAX_VALUE;
+        td[i].value = i;//rand() % MAX_VALUE;
         td[i].func = tree_insert_sem;
         if (pthread_create(&threads[i], NULL, thread_gen, &td[i]) != 0)
         {
@@ -628,11 +644,30 @@ void handleThreads(int num_threads, sem_lock_t lock, BST_t bst)
     printf("\n");
 }
 
+void handleSingleThread(int num_loops, BST_t bst)
+{
+    for (int i = 0; i < num_loops; i++)
+    {
+        printf("-------------delete-node----------------\n");
+        deleteVal(rand() % MAX_VALUE, &bst);
+        printTreeInorder(bst.head);
+        printf("\n");
+        printf("-----------insert-node-----------\n");
+        tree_insert(rand() % MAX_VALUE, &bst);
+    }
+    printf("Initialized tree in order: \n");
+    printTreeInorder(bst.head);
+    printf("\n");
+}
+
 int main()
 {
+    printf("Welcome to timer.c where a threaded and non-threaded BST insert, delete, and traverse the tree.\nWhich one will be faster???\n");
     // binary search tree init
     BST_t bst;
     bst.head = NULL;
+    //timer objects
+    struct timeval startTimeThreads, endTimeThreads, startTimeNoThreads, endTimeNoThreads;
 
     // list of numbers to insert into the tree
     int sortedValues[7] = {1, 2, 3, 4, 5, 8, 11};
@@ -640,16 +675,14 @@ int main()
     // lock
     sem_lock_t lock;
     sem_lock_init(&lock);
-    // setting up tree
-    tree_init(&lock, sortedValues, &bst, arrLen);
-    printf("Welcome to timer.c where a threaded and non-threaded BST insert, delete, and traverse the tree.\nWhich one will be faster???\n");
-
+    tree_init_sem(&lock, sortedValues, &bst, arrLen);
+    
     int num_threads;
     int done = 0;
 
     while (done == 0)
     {
-        printf("Enter a number of threads (25 or fewer): ");
+        printf("Enter a number of threads (1 - 100): ");
         if (scanf("%d", &num_threads) != 1)
         {
             printf("\nInvalid input. Enter a valid number.\n");
@@ -663,16 +696,26 @@ int main()
         }
         else
         {
-            printf("\nEnter a number less than 10.\n");
+            printf("\nEnter a number less than or equal to 100 and greater than 0\n");
         }
     }
-    struct timeval startTimeThreads, endTimeThreads, startTimeNoThreads, endTimeNoThreads;
-    //time threads to run
+
+    // Time operation
     gettimeofday(&startTimeThreads, NULL);
     handleThreads(num_threads, lock, bst);
     gettimeofday(&endTimeThreads, NULL);
-    printf("-----------------------------------\n");
-    //Now it's time to do the same thing with the same number of insertions and deletions but with the main thread and 0 locks
+    printf("--------------End-Multithreded-BST---------------------\n");
+    // Now it's time to do the same thing with the same number of insertions and deletions but with the main thread and 0 locks
+    BST_t singleThreadBst;
+    tree_init(sortedValues, &singleThreadBst, arrLen);
+    // Time operation
+    gettimeofday(&startTimeNoThreads,NULL);
+    handleSingleThread(num_threads, singleThreadBst);
+    gettimeofday(&endTimeNoThreads, NULL);
+    double multiThreadedElapsedTime = (endTimeThreads.tv_sec  - startTimeThreads.tv_sec) + ((endTimeThreads.tv_usec - startTimeThreads.tv_usec)/1000000.0);
+    double singleThreadElapsedTime = (endTimeNoThreads.tv_sec  - startTimeNoThreads.tv_sec) + ((endTimeNoThreads.tv_usec - startTimeNoThreads.tv_usec)/1000000.0);
+    printf("          *------*\n          |Stats:|\n          *------*\n");
+    printf("Multi threaded time in seconds: %f\nSingle threaded time in seconds %f\n", multiThreadedElapsedTime, singleThreadElapsedTime);
     
     return 0;
 }
